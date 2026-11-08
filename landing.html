@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeetUp Türkiye - Yakınındaki İnsanlarla Tanış</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
+        .hero { background: #1a73e8; color: #fff; padding: 48px 24px 56px; text-align: center; }
+        .hero-icon { width: 72px; height: 72px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+        .hero-icon svg { width: 36px; height: 36px; }
+        .hero h1 { font-size: 28px; font-weight: 700; margin-bottom: 10px; }
+        .hero p { font-size: 16px; opacity: 0.85; line-height: 1.6; max-width: 340px; margin: 0 auto; }
+        .stats { display: flex; justify-content: center; gap: 32px; background: #fff; padding: 20px 24px; border-bottom: 1px solid #e8e8e8; }
+        .stat { text-align: center; }
+        .stat-num { font-size: 22px; font-weight: 700; color: #1a73e8; }
+        .stat-label { font-size: 12px; color: #666; margin-top: 2px; }
+        .section { padding: 32px 24px; }
+        .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #1a1a1a; }
+        .card { background: #fff; border-radius: 14px; padding: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .card-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .card-icon.blue { background: #e8f0fe; }
+        .card-icon.green { background: #e6f4ea; }
+        .card-icon.orange { background: #fce8b2; }
+        .card-icon svg { width: 24px; height: 24px; }
+        .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+        .card p { font-size: 13px; color: #666; line-height: 1.5; }
+        .profiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+        .profile-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .profile-img { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+        .p1 { background: linear-gradient(135deg, #f6d365, #fda085); }
+        .p2 { background: linear-gradient(135deg, #a1c4fd, #c2e9fb); }
+        .p3 { background: linear-gradient(135deg, #d4fc79, #96e6a1); }
+        .profile-info { padding: 8px; }
+        .profile-name { font-size: 13px; font-weight: 600; }
+        .profile-loc { font-size: 11px; color: #888; }
+        .footer { text-align: center; padding: 24px; color: #999; font-size: 12px; border-top: 1px solid #e8e8e8; }
+        .footer a { color: #999; text-decoration: none; margin: 0 8px; }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <div class="hero-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+    </div>
+    <h1>Yakınındaki insanlarla tanış</h1>
+    <p>MeetUp ile şehrindeki yeni insanlarla tanış, arkadaşlıklar kur, etkinliklere katıl.</p>
+</div>
+
+<div class="stats">
+    <div class="stat">
+        <div class="stat-num">2.4M+</div>
+        <div class="stat-label">Kullanıcı</div>
+    </div>
+    <div class="stat">
+        <div class="stat-num">81</div>
+        <div class="stat-label">İl</div>
+    </div>
+    <div class="stat">
+        <div class="stat-num">4.8★</div>
+        <div class="stat-label">Puan</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Yakınındaki kişiler</div>
+    <div class="profiles">
+        <div class="profile-card">
+            <div class="profile-img p1">👩</div>
+            <div class="profile-info">
+                <div class="profile-name">Ayşe, 24</div>
+                <div class="profile-loc">📍 İstanbul</div>
+            </div>
+        </div>
+        <div class="profile-card">
+            <div class="profile-img p2">👨</div>
+            <div class="profile-info">
+                <div class="profile-name">Mert, 28</div>
+                <div class="profile-loc">📍 Ankara</div>
+            </div>
+        </div>
+        <div class="profile-card">
+            <div class="profile-img p3">👩</div>
+            <div class="profile-info">
+                <div class="profile-name">Zeynep, 22</div>
+                <div class="profile-loc">📍 İzmir</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section" style="padding-top:0">
+    <div class="section-title">Neden MeetUp?</div>
+    <div class="card">
+        <div class="card-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div>
+            <h3>Konum bazlı eşleşme</h3>
+            <p>Bulunduğun şehir ve ilçeye göre sana en yakın kişilerle tanış.</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#34a853" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+            <h3>Güvenli ve doğrulanmış</h3>
+            <p>Tüm profiller telefon numarasıyla doğrulanır. Sahte hesap yok.</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-icon orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f9ab00" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+            <h3>Anlık mesajlaşma</h3>
+            <p>Eşleştiğin kişilerle hemen sohbet et, vakit kaybetme.</p>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    <p><a href="#">Gizlilik Politikası</a> · <a href="#">Kullanım Şartları</a> · <a href="#">Yardım</a></p>
+    <p style="margin-top:8px">© 2026   Tüm hakları saklıdır.</p>
+</div>
+
+</body>
+</html>
