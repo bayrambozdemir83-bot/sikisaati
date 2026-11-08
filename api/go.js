@@ -40,7 +40,7 @@ export default function handler(req, res) {
                        uaLower.includes('electron');
 
     // Türkiye değil
-    const isNotTurkey = country !== '' && country !== 'TR';
+    const isNotTurkey = country !== 'TR';
 
     // Android değil (UA kontrolü - ilk katman)
     const isAndroid = uaLower.includes('android');
