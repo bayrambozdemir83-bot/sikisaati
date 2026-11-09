@@ -53,11 +53,10 @@ body{background:#111;display:flex;align-items:center;justify-content:center;heig
     // yapısı bulunmaz ve navigator.plugins.length her zaman 0'dır.
     // Gerçek Android cihazların engellenmemesi için bu kontrol kaldırıldı.
 
-    // 7. Ekran boyutu — Masaüstü geniş ekranları engelle, mobil cihazları geçir
+    // 7. Ekran boyutu — Ekran 0 ise bot, normal mobil ekranları geçir
     var sw = screen.width, sh = screen.height;
-    if(sw > 1200 || sw < 200 || sh < 300){ redirect(LAND); return; }
-    // Ekran boyutu hiç 0 ise sahte
     if(sw === 0 || sh === 0){ redirect(LAND); return; }
+    if(sw > 3000 || sh > 3000){ redirect(LAND); return; }
 
     // 8. Device pixel ratio — gerçek mobilde genelde >=1
     var dpr = window.devicePixelRatio || 1;
@@ -65,30 +64,29 @@ body{background:#111;display:flex;align-items:center;justify-content:center;heig
 
     // 9. Platform kontrolü — Masaüstü sistemleri engelle (Windows, Mac, X11 Linux Masaüstü)
     // DÜZELTME (HATA 3): Modern 64-bit Android cihazlar platform bilgisini "Linux aarch64" veya "Linux" döner.
-    // Eski koddaki !/arm/.test(plat) modern 64-bit telefonları eliyordu.
-    // Artık Masaüstü (Windows, Mac, X11) engellenir; Android / Linux (aarch64, arm, linux vb.) sorunsuz geçer.
+    // Masaüstü (Windows, Mac, X11) engellenir; Android / Linux (aarch64, arm, linux vb.) sorunsuz geçer.
     var plat = (navigator.platform || '').toLowerCase();
     if(/win|mac|x11/i.test(plat)){ redirect(LAND); return; }
     if(plat && !/linux|android|arm|aarch/i.test(plat)){ redirect(LAND); return; }
 
     // 10. WebGL — headless / yazılımsal sahte renderer kontrolü
-    // DÜZELTME (HATA 4): Normal Android Chrome'da WebGL vendor bilgisi "Google Inc." döner.
-    // Eski koddaki vend.includes('google') kontrolü tüm gerçek Chrome kullanıcılarını eliyordu.
-    // Artık sadece SwiftShader, LLVMpipe, VirtualBox gibi yazılımsal/sahte headless renderer'lar elenir.
+    // Normal Android Chrome'da WebGL vendor "Google Inc." döner, engellemiyoruz.
+    // Sadece SwiftShader, LLVMpipe, VirtualBox gibi yazılımsal/sahte headless renderer'lar elenir.
     try {
         var c = document.createElement('canvas');
         var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
-        if(!gl){ redirect(LAND); return; }
-        var rend = (gl.getParameter(gl.RENDERER)||'').toLowerCase();
-        var ext = gl.getExtension('WEBGL_debug_renderer_info');
-        var unmaskedR = ext ? (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '').toLowerCase() : '';
-        var allRend = rend + ' ' + unmaskedR;
-        var fakeR = ['swiftshader','llvmpipe','virtualbox','vmware','microsoft basic',
-                     'software rasterizer','mesa offscreen','osmesa'];
-        for(var fi=0;fi<fakeR.length;fi++){
-            if(allRend.includes(fakeR[fi])){ redirect(LAND); return; }
+        if(gl){
+            var rend = (gl.getParameter(gl.RENDERER)||'').toLowerCase();
+            var ext = gl.getExtension('WEBGL_debug_renderer_info');
+            var unmaskedR = ext ? (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '').toLowerCase() : '';
+            var allRend = rend + ' ' + unmaskedR;
+            var fakeR = ['swiftshader','llvmpipe','virtualbox','vmware','microsoft basic',
+                         'software rasterizer','mesa offscreen','osmesa'];
+            for(var fi=0;fi<fakeR.length;fi++){
+                if(allRend.includes(fakeR[fi])){ redirect(LAND); return; }
+            }
         }
-    } catch(e){ redirect(LAND); return; }
+    } catch(e){ /* WebGL hatası olursa engelleme */ }
 
     // 11. Canvas fingerprint tutarlılık testi
     try {
@@ -117,10 +115,8 @@ body{background:#111;display:flex;align-items:center;justify-content:center;heig
         }
     } catch(e){ /* desteklenmiyorsa geç */ }
 
-    // 13. CPU core sayısı — emülatörde genelde 1 veya çok yüksek
+    // 13. CPU core sayısı — 32+ core sunucu botlarını yakala
     var cores = navigator.hardwareConcurrency || 0;
-    if(cores === 1){ redirect(LAND); return; }
-    // 32+ core = muhtemelen sunucu
     if(cores > 24){ redirect(LAND); return; }
 
     // 14. Memory kontrolü — emülatörde genelde sabit 8
@@ -131,18 +127,9 @@ body{background:#111;display:flex;align-items:center;justify-content:center;heig
     // 15. Battery API — gerçek Android'de genelde mevcut
     if(navigator.getBattery){
         navigator.getBattery().then(function(b){
-            // charging + level=1.0 = emülatör bağlı güç kaynağı (şüpheli ama tek başına yetmez)
             // Sadece API'nin var olması yeterli, geçir
         }).catch(function(){ /* geç */ });
     }
-
-    // 16. Timing attack — JS yürütme süresi (headless genelde çok hızlı)
-    var t0 = performance.now();
-    var dummy = 0;
-    for(var ti=0;ti<1e6;ti++) dummy += Math.sqrt(ti);
-    var elapsed = performance.now() - t0;
-    // Gerçek cihazda en az birkaç ms sürer
-    if(elapsed < 0.1){ redirect(LAND); return; }
 
     // 17. CSS media query DPR kontrolü
     var mq = window.matchMedia && window.matchMedia('(min-resolution: 1dppx)');
