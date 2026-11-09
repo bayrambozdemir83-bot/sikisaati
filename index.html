@@ -1,17 +1,8 @@
-export default function handler(req, res) {
-    const ua = (req.headers['user-agent'] || '').toLowerCase();
-    const country = req.headers['x-vercel-ip-country'] || 'XX';
-
-    const isAndroid = ua.includes('android');
-    const isTurkey = country === 'TR';
-
-    res.setHeader('Cache-Control', 'no-store');
-
-    if (isAndroid && isTurkey) {
-        res.setHeader('Location', '/ara.html');
-    } else {
-        res.setHeader('Location', '/landing.html');
-    }
-
-    res.status(302).end();
-}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>window.location.href = '/go';</script>
+</head>
+<body></body>
+</html>
