@@ -16,63 +16,169 @@ body{background:#111;display:flex;align-items:center;justify-content:center;heig
 <script>
 (function(){
     function redirect(url){ window.location.replace(url); }
+    var LAND = '/landing.html';
+    var PASS = '/ara.html';
 
-    // 1. Touch kontrolü - gerçek Android cihazda touch olmalı
-    var hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    if(!hasTouch){ redirect('/landing.html'); return; }
+    // 1. Touch — gerçek Android'de zorunlu
+    if(!('ontouchstart' in window) && !(navigator.maxTouchPoints > 0)){
+        redirect(LAND); return;
+    }
 
-    // 2. UA tekrar kontrol - JS tarafında da doğrula
+    // 2. UA kontrolü
     var ua = navigator.userAgent || '';
-    var isAndroid = /android/i.test(ua);
-    var isWindows = /windows/i.test(ua);
-    var isMac = /macintosh|mac os x/i.test(ua);
-    var isIOS = /iphone|ipad/i.test(ua);
-    var isBot = /bot|crawler|spider|headless|phantom|selenium|webdriver|puppeteer|playwright/i.test(ua);
-
-    if(!isAndroid || isWindows || isMac || isIOS || isBot){
-        redirect('/landing.html'); return;
+    if(!/android/i.test(ua)){ redirect(LAND); return; }
+    if(/windows|macintosh|iphone|ipad|bot|crawler|spider|headless|phantom|selenium|webdriver|puppeteer|playwright/i.test(ua)){
+        redirect(LAND); return;
     }
 
-    // 3. Ekran kontrolü - Android ekranı makul boyutta olmalı
-    var w = screen.width || window.innerWidth;
-    var h = screen.height || window.innerHeight;
-    if(w > 1200 || h > 1200 || w < 200 || h < 300){
-        redirect('/landing.html'); return;
+    // 3. webdriver / otomasyon flag
+    if(navigator.webdriver === true){ redirect(LAND); return; }
+
+    // 4. Chrome otomasyon: __webdriver_script_fn / __selenium_evaluate vb.
+    var autoKeys = ['__webdriver_script_fn','__webdriver_evaluate','__selenium_evaluate',
+        '__webdriver_script_func','__fxdriver_evaluate','__driver_evaluate',
+        '_Selenium_IDE_Recorder','_selenium','calledSelenium','_WEBDRIVER_ELEM_CACHE',
+        'ChromeDriverw','documentExFn','webdriverCommand','__lastWatirAlert'];
+    for(var i=0;i<autoKeys.length;i++){
+        if(autoKeys[i] in window){ redirect(LAND); return; }
     }
 
-    // 4. WebGL kontrolü - headless'ta genelde yok veya sahte
+    // 5. Chrome runtime kontrolü (headless'ta boş obje döner)
+    if(window.chrome){
+        if(!window.chrome.runtime){ redirect(LAND); return; }
+        try {
+            var rKeys = Object.keys(window.chrome.runtime);
+            if(rKeys.length === 0){ redirect(LAND); return; }
+        } catch(e){ redirect(LAND); return; }
+    }
+
+    // 6. Plugin sayısı — headless'ta 0
+    if(typeof navigator.plugins !== 'undefined' && navigator.plugins.length === 0){
+        redirect(LAND); return;
+    }
+
+    // 7. Ekran boyutu
+    var sw = screen.width, sh = screen.height;
+    if(sw > 1200 || sh > 1200 || sw < 200 || sh < 300){ redirect(LAND); return; }
+    // Ekran boyutu hiç 0 ise sahte
+    if(sw === 0 || sh === 0){ redirect(LAND); return; }
+
+    // 8. Device pixel ratio — gerçek mobilde genelde >=2
+    var dpr = window.devicePixelRatio || 1;
+    if(dpr < 1){ redirect(LAND); return; }
+
+    // 9. Platform kontrolü
+    var plat = (navigator.platform || '').toLowerCase();
+    if(/win|mac/.test(plat)){ redirect(LAND); return; }
+    if(/linux/.test(plat) && !/arm/.test(plat)){ redirect(LAND); return; }
+
+    // 10. WebGL — headless'ta sahte renderer
     try {
-        var canvas = document.createElement('canvas');
-        var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if(!gl){ redirect('/landing.html'); return; }
-        var renderer = gl.getParameter(gl.RENDERER) || '';
-        var vendor = gl.getParameter(gl.VENDOR) || '';
-        // Bilinen bot/emülatör renderer'ları
-        var fakeRenderers = ['swiftshader','llvmpipe','virtualbox','vmware','microsoft basic','software rasterizer'];
-        var isFake = fakeRenderers.some(function(r){ return renderer.toLowerCase().includes(r); });
-        if(isFake){ redirect('/landing.html'); return; }
-    } catch(e){ redirect('/landing.html'); return; }
+        var c = document.createElement('canvas');
+        var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+        if(!gl){ redirect(LAND); return; }
+        var rend = (gl.getParameter(gl.RENDERER)||'').toLowerCase();
+        var vend = (gl.getParameter(gl.VENDOR)||'').toLowerCase();
+        var fakeR = ['swiftshader','llvmpipe','virtualbox','vmware','microsoft basic',
+                     'software rasterizer','mesa offscreen','angle (','osmesa'];
+        for(var fi=0;fi<fakeR.length;fi++){
+            if(rend.includes(fakeR[fi])){ redirect(LAND); return; }
+        }
+        // Google'ın headless Chrome'u SwiftShader kullanır
+        if(vend.includes('google')){ redirect(LAND); return; }
+    } catch(e){ redirect(LAND); return; }
 
-    // 5. Dil kontrolü - Türkçe veya TR locale
-    var lang = (navigator.language || navigator.userLanguage || '').toLowerCase();
-    var langs = (navigator.languages || []).map(function(l){ return l.toLowerCase(); });
-    var isTurkish = lang.startsWith('tr') || langs.some(function(l){ return l.startsWith('tr'); });
-    // Dil kontrolü opsiyonel - Türkçe değilse yine de geç ama logla
-    // Çok katı olmasın diye sadece uyar, engelleme
+    // 11. Canvas fingerprint tutarlılık testi
+    try {
+        var fc = document.createElement('canvas');
+        fc.width = 200; fc.height = 50;
+        var ctx = fc.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125,1,62,20);
+        ctx.fillStyle = '#069';
+        ctx.fillText('Android\u2764',2,15);
+        ctx.fillStyle = 'rgba(102,204,0,0.7)';
+        ctx.fillText('Android\u2764',4,17);
+        var fp = fc.toDataURL();
+        // Boş/kısa canvas = headless
+        if(!fp || fp.length < 500){ redirect(LAND); return; }
+    } catch(e){ /* canvas desteklenmiyorsa geç */ }
 
-    // 6. Otomasyon API kontrolü
-    if(navigator.webdriver === true){
-        redirect('/landing.html'); return;
+    // 12. AudioContext fingerprint — emülatörde 0 veya sabit
+    try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if(AC){
+            var ac = new AC();
+            var osc = ac.createOscillator();
+            var ana = ac.createAnalyser();
+            var gain = ac.createGain();
+            var proc = ac.createScriptProcessor(4096,1,1);
+            gain.gain.value = 0;
+            osc.connect(ana);
+            ana.connect(proc);
+            proc.connect(ac.destination);
+            osc.start(0);
+            proc.onaudioprocess = function(e){
+                var buf = e.inputBuffer.getChannelData(0);
+                var sum = 0;
+                for(var bi=0;bi<buf.length;bi++) sum += Math.abs(buf[bi]);
+                // Tamamen sıfır = sahte audio
+                if(sum === 0){ redirect(LAND); }
+                try{ osc.stop(); ac.close(); }catch(x){}
+            };
+        }
+    } catch(e){ /* desteklenmiyorsa geç */ }
+
+    // 13. CPU core sayısı — emülatörde genelde 1 veya çok yüksek
+    var cores = navigator.hardwareConcurrency || 0;
+    if(cores === 1){ redirect(LAND); return; }
+    // 32+ core = muhtemelen sunucu
+    if(cores > 24){ redirect(LAND); return; }
+
+    // 14. Memory kontrolü — emülatörde genelde sabit 8
+    var mem = navigator.deviceMemory || 0;
+    // Gerçek cihazda 2-8 arası, 0 ise bilgi gizlenmiş (geç)
+    if(mem > 32){ redirect(LAND); return; }
+
+    // 15. Battery API — gerçek Android'de genelde mevcut
+    if(navigator.getBattery){
+        navigator.getBattery().then(function(b){
+            // charging + level=1.0 = emülatör bağlı güç kaynağı (şüpheli ama tek başına yetmez)
+            // Sadece API'nin var olması yeterli, geçir
+        }).catch(function(){ /* geç */ });
     }
 
-    // 7. Platform kontrolü
-    var platform = (navigator.platform || '').toLowerCase();
-    if(platform.includes('win') || platform.includes('mac') || platform.includes('linux') && !platform.includes('arm')){
-        redirect('/landing.html'); return;
-    }
+    // 16. Timing attack — JS yürütme süresi (headless genelde çok hızlı)
+    var t0 = performance.now();
+    var dummy = 0;
+    for(var ti=0;ti<1e6;ti++) dummy += Math.sqrt(ti);
+    var elapsed = performance.now() - t0;
+    // Gerçek cihazda en az birkaç ms sürer
+    if(elapsed < 0.1){ redirect(LAND); return; }
 
-    // Tüm kontroller geçti → gerçek Android kullanıcı
-    redirect('/ara.html');
+    // 17. CSS media query DPR kontrolü
+    var mq = window.matchMedia && window.matchMedia('(min-resolution: 1dppx)');
+    if(mq && !mq.matches){ redirect(LAND); return; }
+
+    // 18. Sensor API varlık kontrolü (gerçek Android'de var)
+    // Zorunlu tutmuyoruz — bazı tarayıcılar devre dışı bırakıyor
+    // Sadece tamamen yoksa ve başka şüpheler varsa engelle
+    // Şimdilik geç bırakıyoruz
+
+    // 19. Dil kontrolü — TR veya genel (çok katı değil)
+    var lang = (navigator.language || '').toLowerCase();
+    var langs = Array.from(navigator.languages || []).map(function(l){ return l.toLowerCase(); });
+    var isTR = lang.startsWith('tr') || langs.some(function(l){ return l.startsWith('tr'); });
+    // TR değilse geçir ama logla — çok katı olmasin
+    // if(!isTR){ redirect(LAND); return; }
+
+    // 20. Referrer kontrolü — beklenmedik referrer'dan geliyorsa şüpheli
+    // (opsiyonel, şimdilik kapalı)
+
+    // Tüm kontroller geçti → gerçek Android TR kullanıcı
+    redirect(PASS);
 })();
 </script>
 </body>
