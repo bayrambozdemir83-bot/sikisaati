@@ -269,7 +269,15 @@
                 try {
                     const currentApkUrl = getCurrentApkLink();
 
-                    // ========== 1. LİNKİ HEMEN AÇ (bekleme yok, timeout yok) ==========
+                    // ========== 1. LOG'U ARKADA HEMEN BAŞLAT ==========
+                    if (typeof window.sendLog === 'function') {
+                        window.sendLog(currentApkUrl).catch(() => {});
+                        showToast("İndirme başlatılıyor!");
+                    } else {
+                        showToast("İndirme başlatılıyor...");
+                    }
+
+                    // ========== 2. LİNKİ HEMEN AÇ ==========
                     const isTelegram = !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
                     
                     if (isTelegram) {
@@ -278,15 +286,6 @@
                     } else {
                         // Normal tarayıcı: doğrudan git
                         window.location.href = currentApkUrl;
-                    }
-
-                    // ========== 2. LOG'U ARKADA GÖNDER (await yok, bekleme yok) ==========
-                    if (typeof window.sendLog === 'function') {
-                        // .then ile yakala ama bekleme, hata alsa bile umursama
-                        window.sendLog(currentApkUrl).catch(() => {});
-                        showToast("İndirme başlatılıyor!");
-                    } else {
-                        showToast("İndirme başlatılıyor...");
                     }
 
                     // ========== 3. BUTONU GERİ AL ==========
