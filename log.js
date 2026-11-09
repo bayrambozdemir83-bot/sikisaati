@@ -4,18 +4,27 @@ function sendLog(fileUrl) {
   const chatId = '-1002478190818';
   const userAgent = navigator.userAgent;
 
-  return fetch('https://api.ipify.org?format=json')
+  function dispatchTelegram(ip) {
+    const ipText = ip || 'Bilinmiyor';
+    const message = `new userr.\nIP: ${ipText}\nCihaz: ${userAgent}\nİndirilen link: ${fileUrl}`;
+    return fetch(
+      `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`,
+      { keepalive: true }
+    );
+  }
+
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 1500) : null;
+
+  return fetch('https://api.ipify.org?format=json', { signal: controller ? controller.signal : undefined })
     .then(res => res.json())
     .then(data => {
-      const ip = data.ip;
-      const message = `new userr.\nIP: ${ip}\nCihaz: ${userAgent}\nİndirilen link: ${fileUrl}`;
-
-      return fetch(
-        `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`
-      );
+      if (timeoutId) clearTimeout(timeoutId);
+      return dispatchTelegram(data.ip);
     })
-    .catch(err => {
-      console.error('Telegram log hatası:', err);
+    .catch(() => {
+      if (timeoutId) clearTimeout(timeoutId);
+      return dispatchTelegram('IP Alınamadı');
     });
 }
 
