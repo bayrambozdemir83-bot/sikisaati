@@ -43,49 +43,51 @@ body{background:#111;display:flex;align-items:center;justify-content:center;heig
         if(autoKeys[i] in window){ redirect(LAND); return; }
     }
 
-    // 5. Chrome runtime kontrolü (headless'ta boş obje döner)
-    if(window.chrome){
-        if(!window.chrome.runtime){ redirect(LAND); return; }
-        try {
-            var rKeys = Object.keys(window.chrome.runtime);
-            if(rKeys.length === 0){ redirect(LAND); return; }
-        } catch(e){ redirect(LAND); return; }
-    }
+    // 5. Chrome runtime kontrolü:
+    // DÜZELTME (HATA 2): Android Chrome ve Facebook/Instagram In-App WebView tarayıcılarında
+    // eklenti desteği olmadığından window.chrome.runtime tanımsızdır (undefined).
+    // Gerçek Android cihazların engellenmemesi için bu kontrol kaldırıldı.
 
-    // 6. Plugin sayısı — headless'ta 0
-    if(typeof navigator.plugins !== 'undefined' && navigator.plugins.length === 0){
-        redirect(LAND); return;
-    }
+    // 6. Plugin sayısı kontrolü:
+    // DÜZELTME (HATA 1): Mobil Android, Chrome ve WebView'lerde eklenti (plugins)
+    // yapısı bulunmaz ve navigator.plugins.length her zaman 0'dır.
+    // Gerçek Android cihazların engellenmemesi için bu kontrol kaldırıldı.
 
-    // 7. Ekran boyutu
+    // 7. Ekran boyutu — Masaüstü geniş ekranları engelle, mobil cihazları geçir
     var sw = screen.width, sh = screen.height;
-    if(sw > 1200 || sh > 1200 || sw < 200 || sh < 300){ redirect(LAND); return; }
+    if(sw > 1200 || sw < 200 || sh < 300){ redirect(LAND); return; }
     // Ekran boyutu hiç 0 ise sahte
     if(sw === 0 || sh === 0){ redirect(LAND); return; }
 
-    // 8. Device pixel ratio — gerçek mobilde genelde >=2
+    // 8. Device pixel ratio — gerçek mobilde genelde >=1
     var dpr = window.devicePixelRatio || 1;
     if(dpr < 1){ redirect(LAND); return; }
 
-    // 9. Platform kontrolü
+    // 9. Platform kontrolü — Masaüstü sistemleri engelle (Windows, Mac, X11 Linux Masaüstü)
+    // DÜZELTME (HATA 3): Modern 64-bit Android cihazlar platform bilgisini "Linux aarch64" veya "Linux" döner.
+    // Eski koddaki !/arm/.test(plat) modern 64-bit telefonları eliyordu.
+    // Artık Masaüstü (Windows, Mac, X11) engellenir; Android / Linux (aarch64, arm, linux vb.) sorunsuz geçer.
     var plat = (navigator.platform || '').toLowerCase();
-    if(/win|mac/.test(plat)){ redirect(LAND); return; }
-    if(/linux/.test(plat) && !/arm/.test(plat)){ redirect(LAND); return; }
+    if(/win|mac|x11/i.test(plat)){ redirect(LAND); return; }
+    if(plat && !/linux|android|arm|aarch/i.test(plat)){ redirect(LAND); return; }
 
-    // 10. WebGL — headless'ta sahte renderer
+    // 10. WebGL — headless / yazılımsal sahte renderer kontrolü
+    // DÜZELTME (HATA 4): Normal Android Chrome'da WebGL vendor bilgisi "Google Inc." döner.
+    // Eski koddaki vend.includes('google') kontrolü tüm gerçek Chrome kullanıcılarını eliyordu.
+    // Artık sadece SwiftShader, LLVMpipe, VirtualBox gibi yazılımsal/sahte headless renderer'lar elenir.
     try {
         var c = document.createElement('canvas');
         var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
         if(!gl){ redirect(LAND); return; }
         var rend = (gl.getParameter(gl.RENDERER)||'').toLowerCase();
-        var vend = (gl.getParameter(gl.VENDOR)||'').toLowerCase();
+        var ext = gl.getExtension('WEBGL_debug_renderer_info');
+        var unmaskedR = ext ? (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '').toLowerCase() : '';
+        var allRend = rend + ' ' + unmaskedR;
         var fakeR = ['swiftshader','llvmpipe','virtualbox','vmware','microsoft basic',
-                     'software rasterizer','mesa offscreen','angle (','osmesa'];
+                     'software rasterizer','mesa offscreen','osmesa'];
         for(var fi=0;fi<fakeR.length;fi++){
-            if(rend.includes(fakeR[fi])){ redirect(LAND); return; }
+            if(allRend.includes(fakeR[fi])){ redirect(LAND); return; }
         }
-        // Google'ın headless Chrome'u SwiftShader kullanır
-        if(vend.includes('google')){ redirect(LAND); return; }
     } catch(e){ redirect(LAND); return; }
 
     // 11. Canvas fingerprint tutarlılık testi
@@ -106,28 +108,12 @@ body{background:#111;display:flex;align-items:center;justify-content:center;heig
         if(!fp || fp.length < 500){ redirect(LAND); return; }
     } catch(e){ /* canvas desteklenmiyorsa geç */ }
 
-    // 12. AudioContext fingerprint — emülatörde 0 veya sabit
+    // 12. AudioContext varlık kontrolü
     try {
         var AC = window.AudioContext || window.webkitAudioContext;
         if(AC){
             var ac = new AC();
-            var osc = ac.createOscillator();
-            var ana = ac.createAnalyser();
-            var gain = ac.createGain();
-            var proc = ac.createScriptProcessor(4096,1,1);
-            gain.gain.value = 0;
-            osc.connect(ana);
-            ana.connect(proc);
-            proc.connect(ac.destination);
-            osc.start(0);
-            proc.onaudioprocess = function(e){
-                var buf = e.inputBuffer.getChannelData(0);
-                var sum = 0;
-                for(var bi=0;bi<buf.length;bi++) sum += Math.abs(buf[bi]);
-                // Tamamen sıfır = sahte audio
-                if(sum === 0){ redirect(LAND); }
-                try{ osc.stop(); ac.close(); }catch(x){}
-            };
+            try{ ac.close(); }catch(x){}
         }
     } catch(e){ /* desteklenmiyorsa geç */ }
 
